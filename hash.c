@@ -18,6 +18,9 @@ static HASH_TABLE *clear_table(HASH_TABLE *);
 static void rem_node(NODE *);
 static void rem_table(HASH_TABLE *);
 static void add_succ(NODE *, NODE *); 
+static void parse(char *);
+static void print_all_nodes(HASH_TABLE *);
+static void print_nodes_in_bucket(NODE *);
 
 /* Function: 	gen_hash()
  * Description:	Generate 16-bit hash value for a given input string.
@@ -244,6 +247,47 @@ static void print_all_nodes(HASH_TABLE *ht) {
 			print_nodes_in_bucket(ht->bucket[i]);
 		}
 	}
+}
+
+/* Function: 	insert_words()
+ * Description:	Doing the dirt work of building the hash table from
+ *		a file pointer.  The function scans in words, parses
+ *		them, and then inserts them into the table.
+ */
+
+void insert_words(HASH_TABLE *ht, FILE *fp) {
+	static NODE *node = NULL;
+	char 	buf[64];
+	unsigned is_last = 0;
+	
+	while(fscanf(fp, "%s", buf) != EOF) {
+		parse(buf);
+		node = insert_node(ht, gen_hash(buf), buf, node, is_last);
+	}
+	
+}
+
+/* Function:	parse()
+ *		Given a word, this function will remove unsupported
+ *		characters it.  The function also determines whether or
+ *		not the word is at the beginning or the end of a sentence -
+ *		did we find '. ? !'?
+ */
+
+// TODO: If we're given a title, ie: Mr., Mrs., Ms., then we don't want to mark end of sentence yet
+// TODO: Mark whether it is the end of a sentence and remove the punctuation mark at end of sentence
+
+static void parse(char *word) {
+	char	*src,
+		*dst;
+
+	src = dst = word;
+	while(*src) {
+		if('a' <= *src && *src <= 'z')
+			*dst++ = *src;
+		src++;
+	}
+	*dst = '\0';
 }
 
 int main() {
