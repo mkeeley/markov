@@ -114,7 +114,7 @@ static NODE *insert_node(HASH_TABLE *ht, unsigned key, char *word, NODE *prev_no
 	if(ht->table[key]) {
 		node = ht->table[key];
 		printf("collision '%s' when inserting '%s'\n", ht->table[key]->word, word);
-		// look for node within table slot -> should move to own function, will be doing multiple times
+		// look for node within table slot 
 		while(node && strcmp(node->word, word)) {
 			prev = node;
 			node = node->next;
@@ -178,10 +178,10 @@ static void add_succ(NODE *prev_node, NODE *node) {
 			}
 			// if list is empty
 			else {
-				curr_s = succ;
+				prev_node->succ = succ;
 			}
 		}
-		prev_node->total_succ++;
+		prev_node->sum_succ++;
 	}
 }
 
@@ -200,12 +200,51 @@ static NODE *create_node(unsigned key, char *word, unsigned is_first, unsigned i
 	node->freq = 1;
 	node->first = is_first;
 	node->last = is_last;
-	node->total_succ = 0;
+	node->sum_succ = 0;
 	node->next = NULL;
 	node->succ = NULL;
 	return node;
 }
 
+/* Function: 	print_nodes_in_bucket()
+ * Description:	Print all nodes in a slot in the hash table including
+ *		their word/key pair, general frequency, freq of being
+ *		first and last word in a sentence, and all successors.
+ */
+
+static void print_nodes_in_bucket(NODE *node) {
+	while(node) {
+		printf("WORD: 	'%s'\n", node->word);
+		printf("KEY:	'%u'\n", node->key);
+		printf("freq:	%u\n", node->freq);
+		printf("first:	%u, %%:\t%.3f\n", node->first, (float)node->first/node->freq);
+		printf("last:	%u, %%:\t%.3f\n", node->last, (float)node->last/node->freq);
+		printf("# succ:	%u\n", node->sum_succ);
+		if(node->sum_succ) {
+			printf("SUCC:\n");
+			SUCC	*temp = node->succ;
+			while(temp) {
+				printf("\tWORD:\t'%s'\n", temp->node->word);
+				printf("\tfreq:\t%u\n", temp->freq);
+				printf("\t----\n");
+				temp = temp->next;
+			}
+		}
+		node = node->next;
+	}
+}
+
+/* Function:	print_all_nodes()
+ * Description:	Print all nodes in the hash table.
+ */
+
+static void print_all_nodes(HASH_TABLE *ht) {
+	for(unsigned i = 0; i < USHRT_MAX; i++) {
+		if(ht->table[i]) {
+			print_nodes_in_bucket(ht->table[i]);
+		}
+	}
+}
 
 int main() {
 	char *words[] = {"that's", "a", "lot", "of", "dicks", "that's"};
@@ -219,8 +258,10 @@ int main() {
 	printf("clearing nodes\n");
 	clear_table(ht);
 	//printf("inserting words again\n");
+	node = NULL;
 	for(int i = 0; i < 6; i++) {
 		node = insert_node(ht, gen_hash(words[i]), words[i], node, 0);
 	}
+	print_all_nodes(ht);
 	return 1;
 }

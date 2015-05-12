@@ -18,7 +18,7 @@ typedef struct node {
 	unsigned first;
 	unsigned last;
 	unsigned freq;
-	unsigned total_succ;
+	unsigned sum_succ;
 	char	*word;
 	struct node *next;
 	SUCC	*succ;
