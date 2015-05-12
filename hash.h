@@ -27,7 +27,7 @@ typedef struct node {
 typedef struct {
 	unsigned count;
 	unsigned sentences;
-	NODE	*table[USHRT_MAX];
+	NODE	*bucket[USHRT_MAX];
 } HASH_TABLE;
 
 #endif /* HASH_H */

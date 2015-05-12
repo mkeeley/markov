@@ -61,13 +61,13 @@ static HASH_TABLE *clear_table(HASH_TABLE *ht) {
 		*prev;
 
 	for(i = 0; i < USHRT_MAX; i++) {
-		curr = ht->table[i];
+		curr = ht->bucket[i];
 		while(curr) {
 			prev = curr;
 			curr = curr->next;
 			rem_node(prev);
 		}
-		ht->table[i] = NULL;
+		ht->bucket[i] = NULL;
 	}
 	ht->count = 0;
 	ht->sentences = 0;
@@ -106,14 +106,14 @@ void rem_table(HASH_TABLE *ht) {
  *		to use as next function call's prev_node
  */
 
-static NODE *insert_node(HASH_TABLE *ht, unsigned key, char *word, NODE *prev_node, unsigned next_key) {
+static NODE *insert_node(HASH_TABLE *ht, unsigned key, char *word, NODE *prev_node, unsigned is_last) {
 	NODE 	*node,
 		*prev = NULL;
 
 	printf("bytes in word: %lu\n", strlen(word) + 1);
-	if(ht->table[key]) {
-		node = ht->table[key];
-		printf("collision '%s' when inserting '%s'\n", ht->table[key]->word, word);
+	if(ht->bucket[key]) {
+		node = ht->bucket[key];
+		printf("collision '%s' when inserting '%s'\n", ht->bucket[key]->word, word);
 		// look for node within table slot 
 		while(node && strcmp(node->word, word)) {
 			prev = node;
@@ -127,18 +127,18 @@ static NODE *insert_node(HASH_TABLE *ht, unsigned key, char *word, NODE *prev_no
 			if(!prev_node)
 				node->first++;
 			// no next_key means last in sentence
-			if(!next_key)
+			if(is_last)
 				node->last++;
 		}
 		else {
-			prev->next = create_node(key, word, !prev_node ? 1:0, !next_key ? 1:0);
+			prev->next = create_node(key, word, !prev_node ? 1:0, is_last);
 			node = prev->next;
 		}
 	}
 	else {
 		printf("no collision, inserting '%s'\n", word);
-		ht->table[key] = create_node(key, word, !prev_node ? 1:0, !next_key ? 1:0);
-		node = ht->table[key];
+		ht->bucket[key] = create_node(key, word, !prev_node ? 1:0, is_last);
+		node = ht->bucket[key];
 	}
 	ht->count++;
 	add_succ(prev_node, node);
@@ -240,27 +240,33 @@ static void print_nodes_in_bucket(NODE *node) {
 
 static void print_all_nodes(HASH_TABLE *ht) {
 	for(unsigned i = 0; i < USHRT_MAX; i++) {
-		if(ht->table[i]) {
-			print_nodes_in_bucket(ht->table[i]);
+		if(ht->bucket[i]) {
+			print_nodes_in_bucket(ht->bucket[i]);
 		}
 	}
 }
 
 int main() {
-	char *words[] = {"that's", "a", "lot", "of", "dicks", "that's"};
+	char *words[] = {"that's", "a", "lot", "of", "dicks", "that's", "bees"};
 	HASH_TABLE *ht;
 	NODE 	*node = NULL;
+	unsigned is_last = 0;
 
 	ht = create_table();
-	for(int i = 0; i < 6; i++) {
+	for(int i = 0; i < 7; i++) {
 		node = insert_node(ht, gen_hash(words[i]), words[i], node, 0);
 	}
 	printf("clearing nodes\n");
 	clear_table(ht);
 	//printf("inserting words again\n");
 	node = NULL;
-	for(int i = 0; i < 6; i++) {
-		node = insert_node(ht, gen_hash(words[i]), words[i], node, 0);
+	
+	for(int i = 0; i < 7; i++) {
+		if(i + 1 < 7)
+			is_last = 0;
+		else
+			is_last = 1;
+		node = insert_node(ht, 100, words[i], node, is_last);
 	}
 	print_all_nodes(ht);
 	return 1;
