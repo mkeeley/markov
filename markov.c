@@ -31,28 +31,59 @@ static void sort_by_first(NODE **nodes, unsigned n) {
 	sort_by_first(nodes + i, n - i);
 }
 
+/* Function:	sort_by_freq()
+ * Description:	Quciksort array of nodes based on frequency of
+ *		occurrence.
+ */
+
+static void sort_by_freq(SUCC **nodes, unsigned n) {
+	unsigned i, j, p;
+	SUCC 	*t;
+
+	if(n < 2)
+		return;
+	p = nodes[n/2]->freq;
+	for(i = 0, j = n - 1; ; i++, j--) {
+		while(nodes[i]->freq > p)
+			i++;
+		while(p > nodes[j]->freq)
+			j--;
+		if(i >= j)
+			break;
+		t = nodes[i];
+		nodes[i] = nodes[j];
+		nodes[j] = t;
+	}
+	sort_by_freq(nodes, i);
+	sort_by_freq(nodes + i, n - i);
+}
+
 /* Function:	end_sentence() 
  * Description:	Given a node, determine if the sentence should end.
  */
 
 static unsigned end_sentence(NODE *node) {
 	double end_prob = 0;
+	static double bias = 0;
 
 	if(node->last) {
-		printf("chance of ending equal to \"of the total freq, how often is it ending a sentence\"\n");
-		printf("\tnode->last/node->freq = %lf\n", end_prob = (double)node->last/node->freq);
-		if(end_prob > get_rand()) {
-			printf("ending sentence\n");
+		//printf("chance of ending equal to \"of the total freq, how often is it ending a sentence\"\n");
+		//printf("\tnode->last/node->freq = %lf\n", end_prob = (double)node->last/node->freq);
+		end_prob = (double)node->last/node->freq;
+		if(end_prob + bias > get_rand()) {
+			//printf("ending sentence\n");
+			printf(".\n");
 			return 1;
 		}
+		bias += 0.2;
 	}
-	printf("not ending sentence\n");
+	//printf("not ending sentence\n");
 	return 0;
 }
 // bad random number, but eh
 
 static double get_rand() {
-	time_t	t;
+	static time_t	t;
 	srand((unsigned) time(&t));
 
 	unsigned r = rand() % 1000;
@@ -60,17 +91,22 @@ static double get_rand() {
 }
 	
 /* Function:	build_density()
- * Description:	Build density array.  Each element's value is the previous sum 
- *		probabilities plus current element's probability. Cumulative
- *		distribution.
+ * Description:	Build density array given frequencies.  Each element's value 
+ *		is the previous sum probabilities plus current
+ *		element's probability. Cumulative distribution.
  */
 
-static void build_density(NODE **nodes, double *density, unsigned n, unsigned total) {
+static void build_density(double *density, unsigned n, unsigned total) {
 	unsigned i;
 	double sum = 0;
+	double temp[n];
+
+	for(i = 0; i < n; i++ ) {
+		temp[i] = density[i];
+	}
 
 	for(i = 0; i < n; i++) {
-		sum += (double) nodes[i]->first/total;
+		sum += (double) temp[i]/total;
 		density[i] = sum;
 	}
 }
@@ -83,11 +119,10 @@ static void build_density(NODE **nodes, double *density, unsigned n, unsigned to
  */
 
 static NODE *pick_first_word(HASH_TABLE *ht) {
-	NODE *node;
+	NODE 	*node;
 	unsigned i = 0,
 		sentences = 0,
-		choices = 0,
-		sum = 0;
+		choices = 0;
 	double 	sum_dist = 0,
 		word_prob = get_rand();
 	char	buf[64];
@@ -101,16 +136,17 @@ static NODE *pick_first_word(HASH_TABLE *ht) {
 	NODE 	*nodes[choices];
 	double	density[choices];
 	while((node = get_next_node(ht))) {
-		if(node->first)
+		if(node->first) {
 			nodes[i++] = node;
+		}
 	}
-	
-	//printf("all choices for first word of sentence:\n");
 	sort_by_first(nodes, choices);
-	build_density(nodes, density, choices, sentences);
+	for(i = 0; i < choices; i++)
+		density[i] = nodes[i]->first;
+	
+	build_density(density, choices, sentences);
 	for(i = 0; i < choices; i++) {
 		//printf("freq: %3u, prob: %.5lf, dist: %.5lf, word: %s\n", nodes[i]->first, (double) nodes[i]->first/sentences, density[i], nodes[i]->word);
-		sum += nodes[i]->first;
 		sum_dist += (double)nodes[i]->first/sentences;
 	}
 
@@ -123,11 +159,11 @@ static NODE *pick_first_word(HASH_TABLE *ht) {
 
 	strcpy(buf, node->word);
 	buf[0] = toupper(buf[0]);
-	printf("node chosen: %s\n", buf);
+	//printf("node chosen: %s\n", buf);
 	//printf("sentences:\t%u\n", sentences);
-	//printf("occurences:\t%u\n", sum);
 	//printf("cumulative sum dist: %.3lf\n", word_prob);
 	//printf("total sum dist: %lf\n", sum_dist);
+	printf("%s", buf);
 
 	return node;
 }
@@ -139,32 +175,49 @@ static NODE *pick_first_word(HASH_TABLE *ht) {
 
 static NODE *pick_next_word(NODE *node) {
 	SUCC 	*succ = NULL;
-	unsigned i = 0;
+	unsigned i = 0,
+		size = 0,
+		total = 0;
 	double 	sum_dist = 0,
 		word_prob = get_rand();
 
-	printf("total succ words: %u\n", node->num_succ);
-	printf("total freq words: %u\n", node->sum_succ);
+	size = node->num_succ;
+	total = node->sum_succ;
+	//printf("total succ words: %u\n", size);
+	//printf("total freq words: %u\n", total);
 	if(node->succ) {
-		SUCC *succ_nodes[node->num_succ];
-		double density[node->num_succ];
+		SUCC *succ_nodes[size];
+		double density[size];
 
 		succ = node->succ;
 		while(succ) {
-			succ_nodes[i] = succ;
-			sum_dist += (double)succ->freq/node->sum_succ;
-			density[i++] = sum_dist;
+			succ_nodes[i++] = succ;
+			sum_dist += (double)succ->freq/total;
 			succ = succ->next;
 		}
-		for(i = 0; i < node->num_succ; i++) {
-			printf("freq: %*u, distr: %.4lf, word: %s\n", 3, succ_nodes[i]->freq, density[i], succ_nodes[i]->node->word);
+		sort_by_freq(succ_nodes, size);
+		for(i = 0; i < size; i++) {
+			density[i] = succ_nodes[i]->freq;
 		}
+		build_density(density, size, total);
+		for(i = 0; i < size; i++) {
+		//	printf("freq: %*u, distr: %.4lf, word: %s\n", 3, succ_nodes[i]->freq, density[i], succ_nodes[i]->node->word);
+		}
+		for(i = 0; i < size; i++) {
+			if(word_prob < density[i]) {
+				node = succ_nodes[i]->node;
+				break;
+			}
+		}
+		//printf("next word: %s\n", node->word);
+		//printf("total sum dist: %lf\n", sum_dist);
+		printf(" %s", node->word);
 	}
 	return node;
 }
 
 /* Function:	build_sentence() 
- * Description:	Main loop for building a sentence.
+* Description:	Main loop for building a sentence.
  */
 
 void build_sentence(HASH_TABLE *ht) {
@@ -172,11 +225,11 @@ void build_sentence(HASH_TABLE *ht) {
 	assert(ht);
 	
 	node = pick_first_word(ht);
-	node = pick_next_word(node);
-
-	//while(end_sentence(node)) {
-	//}
+	while(!end_sentence(node)) {
+		node = pick_next_word(node);
+	}
 }
+
 int main() {
 	HASH_TABLE *ht;
 	FILE	*fp;

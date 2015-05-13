@@ -20,9 +20,9 @@ typedef struct succ {
 
 typedef struct node {
 	unsigned key;
-	unsigned first;
-	unsigned last;
-	unsigned freq;
+	unsigned first;		// num times word is first in sentence
+	unsigned last;		// num times word is last in setence
+	unsigned freq;		// num times word occurs
 	unsigned sum_succ;	// total freq of all succ nodes
 	unsigned num_succ;	// total number of unique succ nodes
 	struct node *next;
