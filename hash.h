@@ -7,6 +7,10 @@
 #include <assert.h>
 #include <string.h>
 
+#define MR 	"Mr."
+#define MRS	"Mrs."
+#define MS	"Ms."
+
 typedef struct succ {
 	unsigned freq;
 	struct node *node;

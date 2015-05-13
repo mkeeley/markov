@@ -127,8 +127,10 @@ static NODE *insert_node(HASH_TABLE *ht, unsigned key, char *word, NODE *prev_no
 			printf("already found '%s,' updating freq of node\n", word);
 			node->freq++;
 			// no prev_node means first in sentence
-			if(!prev_node)
+			if(!prev_node) {
 				node->first++;
+				ht->sentences++;
+			}
 			// no next_key means last in sentence
 			if(is_last)
 				node->last++;
@@ -259,7 +261,7 @@ static void print_all_nodes(HASH_TABLE *ht) {
  *		them, and then inserts them into the table.
  */
 
-void insert_words(HASH_TABLE *ht, FILE *fp) {
+static void insert_words(HASH_TABLE *ht, FILE *fp) {
 	static NODE *node = NULL;
 	char 	buf[64];
 	unsigned is_last = 0;
@@ -284,8 +286,6 @@ void insert_words(HASH_TABLE *ht, FILE *fp) {
  *		did we find '. ? !'?
  */
 
-// TODO: If we're given a title, ie: Mr., Mrs., Ms., then we don't want to mark end of sentence yet
-
 static unsigned parse(char *word) {
 	char	*src,
 		*dst;
@@ -294,9 +294,10 @@ static unsigned parse(char *word) {
 
 
 	len = strlen(word);
-	if(len && (word[len-1] == '.' || word[len-1] == '!' || word[len-1] == '?')) {
+	if(len && (word[len-1] == '.' || word[len-1] == '!' || word[len-1] == '?')) 
 		is_last = 1;
-	}
+	if(!strcmp(word, MS) || !strcmp(word, MRS) || !strcmp(word, MR))
+		is_last = 0;
 	src = dst = word;
 	while(*src) {
 		if(('a' <= *src && *src <= 'z') || ('A' <= *src && *src <= 'Z') || *src == '\'')
@@ -307,6 +308,35 @@ static unsigned parse(char *word) {
 	return is_last;
 }
 
+/* Function:	get_next_node()
+ * Description:	Return the next valid node from the hash table.  It goes through
+ *		each node in the current bucket before moving to the next one. 
+ *		This function should be called until it returns NULL, effectively 
+ *		resetting the pointer within the function.
+ */
+
+NODE *get_next_node(HASH_TABLE *ht) {
+	static HASH_TABLE *local_ht = NULL;
+	static NODE *local_node = NULL;
+	static unsigned i = 0;
+	
+	assert(ht);
+	if(ht != local_ht) {
+		printf("resetting %s local vars\n", __FUNCTION__);
+		local_ht = ht;
+		local_node = NULL;
+		i = 0;
+	}
+
+	do {
+		if(local_node)
+			local_node = local_node->next;
+		else 
+			local_node = local_ht->bucket[i++];
+	} while(!local_node && i < USHRT_MAX);
+	return local_node;
+}
+	
 int main() {
 	char *words[] = {"that's", "a", "lot", "of", "dicks", "that's", "bees"};
 	HASH_TABLE *ht;
@@ -320,7 +350,6 @@ int main() {
 	}
 	printf("clearing nodes\n");
 	clear_table(ht);
-	//printf("inserting words again\n");
 	node = NULL;
 	
 	for(int i = 0; i < 7; i++) {
@@ -338,5 +367,7 @@ int main() {
 	insert_words(ht, fp);
 	print_all_nodes(ht);
 	
+	while((node = get_next_node(ht)))
+		printf("node->word: %s\n", node->word);
 	return 1;
 }
