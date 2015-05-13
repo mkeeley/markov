@@ -62,20 +62,29 @@ static void sort_by_freq(SUCC **nodes, unsigned n) {
  * Description:	Given a node, determine if the sentence should end.
  */
 
+// TODO: instead of bias, use average length of sentence
 static unsigned end_sentence(NODE *node) {
 	double end_prob = 0;
 	static double bias = 0;
+	double the_rand = 0;
 
 	if(node->last) {
 		//printf("chance of ending equal to \"of the total freq, how often is it ending a sentence\"\n");
 		//printf("\tnode->last/node->freq = %lf\n", end_prob = (double)node->last/node->freq);
 		end_prob = (double)node->last/node->freq;
-		if(end_prob + bias > get_rand()) {
+		the_rand = get_rand();
+		//printf("\nend prob: %lf\n", end_prob);
+		//printf("the rand: %lf\n", the_rand);
+		if(end_prob + bias > the_rand) {
 			//printf("ending sentence\n");
 			printf(".\n");
 			return 1;
 		}
 		bias += 0.2;
+	}
+	if(node->num_succ == 0) {
+		printf(".\n");
+		return 1;
 	}
 	//printf("not ending sentence\n");
 	return 0;

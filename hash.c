@@ -297,7 +297,7 @@ static unsigned parse(char *word) {
 		is_last = 0;
 	src = dst = word;
 	while(*src) {
-		*src = tolower(*src);
+		//*src = tolower(*src);
 		if(('a' <= *src && *src <= 'z') || ('A' <= *src && *src <= 'Z') || *src == '\'' || *src == '-' || ('0' <= *src && *src <= '9'))
 			*dst++ = *src;
 		src++;
