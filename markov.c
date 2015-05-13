@@ -1,10 +1,21 @@
 #include "hash.h"
+#include "markov.h"
 
+// bad random number, but eh
+
+static double get_rand() {
+	time_t	t;
+	srand((unsigned) time(&t));
+
+	unsigned r = rand() % 1000;
+	return (double)r/1000;
+}
+	
 static NODE *pick_first_word(HASH_TABLE *ht) {
 	NODE *node;
-	unsigned choices = 0;
-	unsigned sentences = 0;
-	unsigned i = 0;
+	unsigned i = 0,
+		sentences = 0,
+		choices = 0;
 
 	printf("num sentences: %u\n", sentences = get_sentences(ht));
 
@@ -23,6 +34,7 @@ static NODE *pick_first_word(HASH_TABLE *ht) {
 	for(i = 0; i < choices; i++) {
 		printf("\t%s freq:\t%u, prob:\t%.3f\n", picks[i]->word, picks[i]->first, (float) picks[i]->first/sentences);
 	}
+	printf("cumulative sum distr: %.3lf\n", get_rand());
 	return node;
 }
 	
