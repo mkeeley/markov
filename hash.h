@@ -6,6 +6,7 @@
 #include <limits.h>
 #include <assert.h>
 #include <string.h>
+#include <ctype.h>
 
 #define MR 	"Mr."
 #define MRS	"Mrs."
@@ -22,9 +23,10 @@ typedef struct node {
 	unsigned first;
 	unsigned last;
 	unsigned freq;
-	unsigned sum_succ;
-	char	*word;
+	unsigned sum_succ;	// total freq of all succ nodes
+	unsigned num_succ;	// total number of unique succ nodes
 	struct node *next;
+	char	*word;
 	SUCC	*succ;
 } NODE;
 	

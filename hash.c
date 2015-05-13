@@ -182,6 +182,7 @@ static void add_succ(NODE *prev_node, NODE *node) {
 			else {
 				prev_node->succ = succ;
 			}
+			prev_node->num_succ++;
 		}
 		prev_node->sum_succ++;
 	}
@@ -203,6 +204,7 @@ static NODE *create_node(unsigned key, char *word, unsigned is_first, unsigned i
 	node->first = is_first;
 	node->last = is_last;
 	node->sum_succ = 0;
+	node->num_succ = 0;
 	node->next = NULL;
 	node->succ = NULL;
 	return node;
@@ -223,7 +225,8 @@ static void print_nodes_in_bucket(NODE *node) {
 		printf("freq:	%u\n", node->freq);
 		printf("first:	%u, %%:\t%.3f\n", node->first, (float)node->first/node->freq);
 		printf("last:	%u, %%:\t%.3f\n", node->last, (float)node->last/node->freq);
-		printf("# succ:	%u\n", node->sum_succ);
+		printf("succfrq:%u\n", node->sum_succ);
+		printf("succnum:%u\n", node->num_succ);
 		if(node->sum_succ) {
 			printf("SUCC:\n");
 			temp = node->succ;
@@ -294,6 +297,7 @@ static unsigned parse(char *word) {
 		is_last = 0;
 	src = dst = word;
 	while(*src) {
+		*src = tolower(*src);
 		if(('a' <= *src && *src <= 'z') || ('A' <= *src && *src <= 'Z') || *src == '\'' || *src == '-' || ('0' <= *src && *src <= '9'))
 			*dst++ = *src;
 		src++;
@@ -316,7 +320,7 @@ NODE *get_next_node(HASH_TABLE *ht) {
 	
 	assert(ht);
 	if(ht != local_ht || i == USHRT_MAX) {
-		printf("resetting %s local vars\n", __FUNCTION__);
+		//printf("resetting %s local vars\n", __FUNCTION__);
 		local_ht = ht;
 		local_node = NULL;
 		i = 0;
@@ -339,42 +343,3 @@ unsigned get_sentences(HASH_TABLE *ht) {
 	assert(ht);
 	return ht->sentences;
 }
-
-/*
-	
-int main() {
-	char *words[] = {"that's", "a", "lot", "of", "dicks", "that's", "bees"};
-	HASH_TABLE *ht;
-	NODE 	*node = NULL;
-	unsigned is_last = 0;
-	FILE	*fp;
-
-	ht = create_table();
-	for(int i = 0; i < 7; i++) {
-		node = insert_node(ht, gen_hash(words[i]), words[i], node, 0);
-	}
-	printf("clearing nodes\n");
-	clear_table(ht);
-	node = NULL;
-	
-	for(int i = 0; i < 7; i++) {
-		if(i + 1 < 7)
-			is_last = 0;
-		else
-			is_last = 1;
-		node = insert_node(ht, 100, words[i], node, is_last);
-	}
-	print_all_nodes(ht);
-	clear_table(ht);
-	node = NULL;
-	// test parser
-	fp = fopen("test.txt", "r");
-	insert_words(ht, fp);
-	print_all_nodes(ht);
-	
-	while((node = get_next_node(ht))) {
-		printf("node->word: %s\n", node->word);
-	}
-	return 1;
-}
-*/
