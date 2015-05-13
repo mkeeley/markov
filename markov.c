@@ -3,11 +3,10 @@
 
 static NODE *pick_first_word(HASH_TABLE *);
 static double get_rand();
+static void quicksort(NODE **, unsigned);
 
 static void quicksort(NODE **nodes, unsigned n) {
-	unsigned i,
-		 j,
-		 p;
+	unsigned i, j, p;
 	NODE 	*t;
 
 	if(n < 2)
@@ -38,6 +37,22 @@ static double get_rand() {
 	return (double)r/1000;
 }
 	
+/* Function:	build_density()
+ * Description:	Build density array.  Each element's value is the previous sum 
+ *		probabilities plus current element's probability. Cumulative
+ *		distribution.
+ */
+
+static void build_density(NODE **nodes, double *density, unsigned n, unsigned total) {
+	unsigned i;
+	double sum = 0;
+
+	for(i = 0; i < n; i++) {
+		sum += (double) nodes[i]->first/total;
+		density[i] = sum;
+	}
+}
+
 /* Function:	pick_first_word()
  * Description:	Pick the first word of the sentence to construct.  Do so by
  *		creating a list of all possible words to start the sentence,
@@ -51,7 +66,8 @@ static NODE *pick_first_word(HASH_TABLE *ht) {
 		sentences = 0,
 		choices = 0,
 		sum = 0;
-	double 	sum_dist = 0;
+	double 	sum_dist = 0,
+		prob = 0;
 
 	sentences = get_sentences(ht);
 	printf("num sentences: %u\n", sentences);
@@ -61,7 +77,8 @@ static NODE *pick_first_word(HASH_TABLE *ht) {
 			choices++;
 	}
 
-	NODE *picks[choices];
+	NODE 	*picks[choices];
+	double	density[choices];
 	while((node = get_next_node(ht))) {
 		if(node->first)
 			picks[i++] = node;
@@ -69,19 +86,25 @@ static NODE *pick_first_word(HASH_TABLE *ht) {
 	
 	printf("all choices for first word of sentence:\n");
 	quicksort(picks, choices);
+	build_density(picks, density, choices, sentences);
 	for(i = 0; i < choices; i++) {
-		printf("%s:\n\tfreq: %u,\tprob: %.5lf\n", picks[i]->word, picks[i]->first, (double) picks[i]->first/sentences);
+		printf("freq: %3u, prob: %.5lf, dist: %.5lf, word: %s\n", picks[i]->first, (double) picks[i]->first/sentences, density[i], picks[i]->word);
 		sum += picks[i]->first;
 		sum_dist += (double)picks[i]->first/sentences;
 	}
 
 	printf("sentences:\t%u\n", sentences);
 	printf("occurences:\t%u\n", sum);
-	printf("cumulative sum distr: %.3lf\n", get_rand());
-	printf("sum dist: %lf\n", sum_dist);
-	// sort list
-	// then choose word based on distribution
+	printf("cumulative sum dist: %.3lf\n", prob = get_rand());
+	printf("total sum dist: %lf\n", sum_dist);
 
+	for(i = 0; i < choices; i++) {
+		if(prob < density[i]) {
+			node = picks[i];
+			break;
+		}
+	}
+	printf("node: chosen: %s, chances: %.5lf\n", node->word, density[i]);
 	return node;
 }
 	
@@ -92,7 +115,7 @@ int main() {
 
 	ht = create_table();
 	// test parser
-	fp = fopen("test2.txt", "r");
+	fp = fopen("test3.txt", "r");
 	insert_words(ht, fp);
 	//print_all_nodes(ht);
 	

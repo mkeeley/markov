@@ -109,10 +109,10 @@ static NODE *insert_node(HASH_TABLE *ht, unsigned key, char *word, NODE *prev_no
 	NODE 	*node,
 		*prev = NULL;
 
-	printf("bytes in word: %lu\n", strlen(word) + 1);
+	//printf("bytes in word: %lu\n", strlen(word) + 1);
 	if(ht->bucket[key]) {
 		node = ht->bucket[key];
-		printf("collision '%s' when inserting '%s'\n", ht->bucket[key]->word, word);
+		//printf("collision '%s' when inserting '%s'\n", ht->bucket[key]->word, word);
 		// look for node within table slot 
 		while(node && strcmp(node->word, word)) {
 			prev = node;
@@ -120,7 +120,7 @@ static NODE *insert_node(HASH_TABLE *ht, unsigned key, char *word, NODE *prev_no
 		}
 		// if node already inserted
 		if(node) {
-			printf("already found '%s,' updating freq of node\n", word);
+			//printf("already found '%s,' updating freq of node\n", word);
 			node->freq++;
 			// no prev_node means first in sentence
 			if(!prev_node) {
@@ -136,7 +136,7 @@ static NODE *insert_node(HASH_TABLE *ht, unsigned key, char *word, NODE *prev_no
 		}
 	}
 	else {
-		printf("no collision, inserting '%s'\n", word);
+		//printf("no collision, inserting '%s'\n", word);
 		ht->bucket[key] = create_node(key, word, !prev_node ? 1:0, is_last);
 		node = ht->bucket[key];
 	}
@@ -158,7 +158,7 @@ static void add_succ(NODE *prev_node, NODE *node) {
 		*succ;
 
 	if(prev_node) {
-		printf("adding '%s' to '%s'->succ\n", node->word, prev_node->word);
+		//printf("adding '%s' to '%s'->succ\n", node->word, prev_node->word);
 		curr_s = prev_node->succ;
 		prev_s = NULL;
 		while(curr_s && strcmp(curr_s->node->word, node->word)) {
@@ -176,9 +176,7 @@ static void add_succ(NODE *prev_node, NODE *node) {
 			succ->freq = 1;
 			// if succ does not exist and list is not empty
 			if(prev_s) {	
-				printf("adding!\n");
 				prev_s->next = succ;
-				printf("added!\n");
 			}
 			// if list is empty
 			else {
@@ -289,7 +287,6 @@ static unsigned parse(char *word) {
 	unsigned len,
 		 is_last = 0;
 
-
 	len = strlen(word);
 	if(len && (word[len-1] == '.' || word[len-1] == '!' || word[len-1] == '?')) 
 		is_last = 1;
@@ -297,7 +294,7 @@ static unsigned parse(char *word) {
 		is_last = 0;
 	src = dst = word;
 	while(*src) {
-		if(('a' <= *src && *src <= 'z') || ('A' <= *src && *src <= 'Z') || *src == '\'')
+		if(('a' <= *src && *src <= 'z') || ('A' <= *src && *src <= 'Z') || *src == '\'' || *src == '-' || ('0' <= *src && *src <= '9'))
 			*dst++ = *src;
 		src++;
 	}
