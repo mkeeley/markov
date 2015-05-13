@@ -18,7 +18,7 @@ static HASH_TABLE *clear_table(HASH_TABLE *);
 static void rem_node(NODE *);
 static void rem_table(HASH_TABLE *);
 static void add_succ(NODE *, NODE *); 
-static void parse(char *);
+static unsigned parse(char *);
 static void print_all_nodes(HASH_TABLE *);
 static void print_nodes_in_bucket(NODE *);
 
@@ -154,12 +154,14 @@ static NODE *insert_node(HASH_TABLE *ht, unsigned key, char *word, NODE *prev_no
  */
 
 static void add_succ(NODE *prev_node, NODE *node) {
-	// node already exists, search through prev_node's succ list and increase freq or add word
+	SUCC	*curr_s,
+		*prev_s,
+		*succ;
+
 	if(prev_node) {
 		printf("adding '%s' to '%s'->succ\n", node->word, prev_node->word);
-		SUCC	*curr_s = prev_node->succ,
-			*prev_s = NULL,
-			*succ;
+		curr_s = prev_node->succ;
+		prev_s = NULL;
 		while(curr_s && strcmp(curr_s->node->word, node->word)) {
 			prev_s = curr_s;
 			curr_s = curr_s->next;
@@ -216,6 +218,8 @@ static NODE *create_node(unsigned key, char *word, unsigned is_first, unsigned i
  */
 
 static void print_nodes_in_bucket(NODE *node) {
+	SUCC	*temp;
+
 	while(node) {
 		printf("WORD: 	'%s'\n", node->word);
 		printf("KEY:	'%u'\n", node->key);
@@ -225,7 +229,7 @@ static void print_nodes_in_bucket(NODE *node) {
 		printf("# succ:	%u\n", node->sum_succ);
 		if(node->sum_succ) {
 			printf("SUCC:\n");
-			SUCC	*temp = node->succ;
+			temp = node->succ;
 			while(temp) {
 				printf("\tWORD:\t'%s'\n", temp->node->word);
 				printf("\tfreq:\t%u\n", temp->freq);
@@ -261,8 +265,14 @@ void insert_words(HASH_TABLE *ht, FILE *fp) {
 	unsigned is_last = 0;
 	
 	while(fscanf(fp, "%s", buf) != EOF) {
-		parse(buf);
+		is_last = parse(buf);
 		node = insert_node(ht, gen_hash(buf), buf, node, is_last);
+		// if last word in sentence, reset node pointer and is_last flag
+		// node == NULL flags insert_node that next word is first in sentence
+		if(is_last) {
+			node = NULL;
+			is_last = 0;
+		}
 	}
 	
 }
@@ -275,19 +285,26 @@ void insert_words(HASH_TABLE *ht, FILE *fp) {
  */
 
 // TODO: If we're given a title, ie: Mr., Mrs., Ms., then we don't want to mark end of sentence yet
-// TODO: Mark whether it is the end of a sentence and remove the punctuation mark at end of sentence
 
-static void parse(char *word) {
+static unsigned parse(char *word) {
 	char	*src,
 		*dst;
+	unsigned len,
+		 is_last = 0;
 
+
+	len = strlen(word);
+	if(len && (word[len-1] == '.' || word[len-1] == '!' || word[len-1] == '?')) {
+		is_last = 1;
+	}
 	src = dst = word;
 	while(*src) {
-		if('a' <= *src && *src <= 'z')
+		if(('a' <= *src && *src <= 'z') || ('A' <= *src && *src <= 'Z') || *src == '\'')
 			*dst++ = *src;
 		src++;
 	}
 	*dst = '\0';
+	return is_last;
 }
 
 int main() {
@@ -295,6 +312,7 @@ int main() {
 	HASH_TABLE *ht;
 	NODE 	*node = NULL;
 	unsigned is_last = 0;
+	FILE	*fp;
 
 	ht = create_table();
 	for(int i = 0; i < 7; i++) {
@@ -313,5 +331,12 @@ int main() {
 		node = insert_node(ht, 100, words[i], node, is_last);
 	}
 	print_all_nodes(ht);
+	clear_table(ht);
+	node = NULL;
+	// test parser
+	fp = fopen("test.txt", "r");
+	insert_words(ht, fp);
+	print_all_nodes(ht);
+	
 	return 1;
 }
