@@ -35,9 +35,12 @@ typedef struct {
 } HASH_TABLE;
 
 HASH_TABLE *create_table();
+HASH_TABLE *clear_table(HASH_TABLE *);
 NODE *get_next_node(HASH_TABLE *);
 void insert_words(HASH_TABLE *, FILE *);
 void print_all_nodes(HASH_TABLE *);
+void rem_table(HASH_TABLE *);
+unsigned get_sentences(HASH_TABLE *);
 
 #endif /* HASH_H */
 

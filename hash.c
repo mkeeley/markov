@@ -13,9 +13,7 @@
 static unsigned gen_hash(char *);
 static NODE *create_node(unsigned, char *, unsigned, unsigned);
 static NODE *insert_node(HASH_TABLE *, unsigned, char *, NODE *, unsigned);
-static HASH_TABLE *clear_table(HASH_TABLE *);
 static void rem_node(NODE *);
-static void rem_table(HASH_TABLE *);
 static void add_succ(NODE *, NODE *); 
 static unsigned parse(char *);
 static void print_nodes_in_bucket(NODE *);
@@ -56,7 +54,7 @@ HASH_TABLE *create_table() {
  *		Return an empty table, the table has not been freed.
  */
 
-static HASH_TABLE *clear_table(HASH_TABLE *ht) {
+HASH_TABLE *clear_table(HASH_TABLE *ht) {
 	unsigned i;
 	NODE	*curr,
 		*prev;
@@ -127,7 +125,6 @@ static NODE *insert_node(HASH_TABLE *ht, unsigned key, char *word, NODE *prev_no
 			// no prev_node means first in sentence
 			if(!prev_node) {
 				node->first++;
-				ht->sentences++;
 			}
 			// no next_key means last in sentence
 			if(is_last)
@@ -143,6 +140,8 @@ static NODE *insert_node(HASH_TABLE *ht, unsigned key, char *word, NODE *prev_no
 		ht->bucket[key] = create_node(key, word, !prev_node ? 1:0, is_last);
 		node = ht->bucket[key];
 	}
+	if(!prev_node)
+		ht->sentences++;
 	ht->count++;
 	add_succ(prev_node, node);
 	return node;
@@ -319,7 +318,7 @@ NODE *get_next_node(HASH_TABLE *ht) {
 	static unsigned i = 0;
 	
 	assert(ht);
-	if(ht != local_ht) {
+	if(ht != local_ht || i == USHRT_MAX) {
 		printf("resetting %s local vars\n", __FUNCTION__);
 		local_ht = ht;
 		local_node = NULL;
@@ -334,6 +333,16 @@ NODE *get_next_node(HASH_TABLE *ht) {
 	} while(!local_node && i < USHRT_MAX);
 	return local_node;
 }
+
+/* Function:	get_sentences()
+ * Description:	Return the number of sentences in the hash table.
+ */
+
+unsigned get_sentences(HASH_TABLE *ht) {
+	assert(ht);
+	return ht->sentences;
+}
+
 /*
 	
 int main() {
