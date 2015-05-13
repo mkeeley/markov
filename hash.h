@@ -34,6 +34,11 @@ typedef struct {
 	NODE	*bucket[USHRT_MAX];
 } HASH_TABLE;
 
+HASH_TABLE *create_table();
+NODE *get_next_node(HASH_TABLE *);
+void insert_words(HASH_TABLE *, FILE *);
+void print_all_nodes(HASH_TABLE *);
+
 #endif /* HASH_H */
 
 

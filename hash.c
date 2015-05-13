@@ -13,13 +13,11 @@
 static unsigned gen_hash(char *);
 static NODE *create_node(unsigned, char *, unsigned, unsigned);
 static NODE *insert_node(HASH_TABLE *, unsigned, char *, NODE *, unsigned);
-static HASH_TABLE *create_table();
 static HASH_TABLE *clear_table(HASH_TABLE *);
 static void rem_node(NODE *);
 static void rem_table(HASH_TABLE *);
 static void add_succ(NODE *, NODE *); 
 static unsigned parse(char *);
-static void print_all_nodes(HASH_TABLE *);
 static void print_nodes_in_bucket(NODE *);
 
 /* Function: 	gen_hash()
@@ -44,7 +42,7 @@ static unsigned gen_hash(char *s) {
  *		total number of sentences in the table.
  */
 
-static HASH_TABLE *create_table() {
+HASH_TABLE *create_table() {
 	HASH_TABLE *ht = malloc(sizeof(HASH_TABLE));
 	assert(ht);
 	
@@ -247,7 +245,7 @@ static void print_nodes_in_bucket(NODE *node) {
  * Description:	Print all nodes in the hash table.
  */
 
-static void print_all_nodes(HASH_TABLE *ht) {
+void print_all_nodes(HASH_TABLE *ht) {
 	for(unsigned i = 0; i < USHRT_MAX; i++) {
 		if(ht->bucket[i]) {
 			print_nodes_in_bucket(ht->bucket[i]);
@@ -261,7 +259,7 @@ static void print_all_nodes(HASH_TABLE *ht) {
  *		them, and then inserts them into the table.
  */
 
-static void insert_words(HASH_TABLE *ht, FILE *fp) {
+void insert_words(HASH_TABLE *ht, FILE *fp) {
 	static NODE *node = NULL;
 	char 	buf[64];
 	unsigned is_last = 0;
@@ -336,6 +334,7 @@ NODE *get_next_node(HASH_TABLE *ht) {
 	} while(!local_node && i < USHRT_MAX);
 	return local_node;
 }
+/*
 	
 int main() {
 	char *words[] = {"that's", "a", "lot", "of", "dicks", "that's", "bees"};
@@ -367,7 +366,9 @@ int main() {
 	insert_words(ht, fp);
 	print_all_nodes(ht);
 	
-	while((node = get_next_node(ht)))
+	while((node = get_next_node(ht))) {
 		printf("node->word: %s\n", node->word);
+	}
 	return 1;
 }
+*/
