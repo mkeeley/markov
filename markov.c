@@ -1,8 +1,10 @@
 #include "markov.h"
 
 static NODE *pick_first_word(HASH_TABLE *);
-static double get_rand();
+static double gen_rand();
 static void sort_by_first(NODE **, unsigned);
+
+static pcg32_random_t rng;
 
 /* Function:	sort_by_first()
  * Description:	Quciksort array of nodes based on frequency of
@@ -64,20 +66,17 @@ static void sort_by_freq(SUCC **nodes, unsigned n) {
 
 // TODO: instead of bias, use average length of sentence
 static unsigned end_sentence(NODE *node) {
-	double end_prob = 0;
 	static double bias = 0;
-	double the_rand = 0;
-		bias += 0.01;
+	double end_prob = 0,
+		d = 0;
 
+	bias += 0.01;
 	if(node->last) {
 		//printf("chance of ending equal to \"of the total freq, how often is it ending a sentence\"\n");
 		//printf("\tnode->last/node->freq = %lf\n", end_prob = (double)node->last/node->freq);
 		end_prob = (double)node->last/node->freq;
-		the_rand = get_rand();
-		//printf("\nend prob: %lf\n", end_prob);
-		//printf("the rand: %lf\n", the_rand);
-		if(end_prob + bias > the_rand) {
-			//printf("ending sentence\n");
+		d = gen_rand();
+		if(end_prob + bias > d) {
 			printf(".\n");
 			return 1;
 		}
@@ -86,17 +85,11 @@ static unsigned end_sentence(NODE *node) {
 		printf(".\n");
 		return 1;
 	}
-	//printf("not ending sentence\n");
 	return 0;
 }
-// bad random number, but eh
 
-static double get_rand() {
-	static time_t	t;
-	srand((unsigned) time(&t));
-
-	unsigned r = rand() % 1000;
-	return (double)r/1000;
+static double gen_rand() {
+	return ldexp(pcg32_random_r(&rng), -32); // random number [0, 1)
 }
 	
 /* Function:	build_density()
@@ -133,7 +126,7 @@ static NODE *pick_first_word(HASH_TABLE *ht) {
 		sentences = 0,
 		choices = 0;
 	double 	sum_dist = 0,
-		word_prob = get_rand();
+		word_prob = gen_rand();
 	char	buf[64];
 
 	sentences = get_sentences(ht);
@@ -189,7 +182,7 @@ static NODE *pick_next_word(NODE *node) {
 		size = 0,
 		total = 0;
 	double 	sum_dist = 0,
-		word_prob = get_rand();
+		word_prob = gen_rand();
 
 	size = node->num_succ;
 	total = node->sum_succ;
@@ -253,6 +246,7 @@ int main() {
 	HASH_TABLE *ht;
 	FILE	*fp;
 
+	pcg32_srandom_r(&rng, time(NULL), (intptr_t)&rng);
 	ht = create_table();
 	// test parser
 	fp = fopen("test3.txt", "r");
