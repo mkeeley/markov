@@ -28,6 +28,7 @@ typedef struct node {
 	struct node *next;
 	char	*word;
 	SUCC	*succ;
+	unsigned traversed;	// penalty for words that have been chosen already - reduce loops and over reuse of more probable words
 } NODE;
 	
 typedef struct {

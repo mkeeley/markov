@@ -67,6 +67,7 @@ static unsigned end_sentence(NODE *node) {
 	double end_prob = 0;
 	static double bias = 0;
 	double the_rand = 0;
+		bias += 0.01;
 
 	if(node->last) {
 		//printf("chance of ending equal to \"of the total freq, how often is it ending a sentence\"\n");
@@ -80,7 +81,6 @@ static unsigned end_sentence(NODE *node) {
 			printf(".\n");
 			return 1;
 		}
-		bias += 0.2;
 	}
 	if(node->num_succ == 0) {
 		printf(".\n");
@@ -174,6 +174,7 @@ static NODE *pick_first_word(HASH_TABLE *ht) {
 	//printf("total sum dist: %lf\n", sum_dist);
 	printf("%s", buf);
 
+	node->traversed++;
 	return node;
 }
 	
@@ -213,15 +214,24 @@ static NODE *pick_next_word(NODE *node) {
 		//	printf("freq: %*u, distr: %.4lf, word: %s\n", 3, succ_nodes[i]->freq, density[i], succ_nodes[i]->node->word);
 		}
 		for(i = 0; i < size; i++) {
-			if(word_prob < density[i]) {
+			if(word_prob < density[i] && !succ_nodes[i]->node->traversed) {
 				node = succ_nodes[i]->node;
 				break;
 			}
+		}
+		if(i == size) {
+			printf("premature END\n");
+			exit(1);
 		}
 		//printf("next word: %s\n", node->word);
 		//printf("total sum dist: %lf\n", sum_dist);
 		printf(" %s", node->word);
 	}
+	else {
+		printf("premature END\n");
+		exit(1);
+	}
+	node->traversed++;
 	return node;
 }
 

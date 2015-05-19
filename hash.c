@@ -205,6 +205,7 @@ static NODE *create_node(unsigned key, char *word, unsigned is_first, unsigned i
 	node->last = is_last;
 	node->sum_succ = 0;
 	node->num_succ = 0;
+	node->traversed = 0;
 	node->next = NULL;
 	node->succ = NULL;
 	return node;
