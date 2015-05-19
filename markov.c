@@ -246,6 +246,7 @@ int main() {
 	HASH_TABLE *ht;
 	FILE	*fp;
 
+	// init pcg rng
 	pcg32_srandom_r(&rng, time(NULL), (intptr_t)&rng);
 	ht = create_table();
 	// test parser

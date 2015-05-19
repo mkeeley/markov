@@ -18,6 +18,12 @@ typedef struct succ {
 	struct succ *next;
 } SUCC;
 
+typedef struct prec {
+	struct succ *succ;	// list of successors
+	unsigned sum_succ;	// total occurrences of successors
+	unsigned num_succ;	// number of unique successors
+} PREC;
+
 typedef struct node {
 	unsigned key;
 	unsigned first;		// num times word is first in sentence
