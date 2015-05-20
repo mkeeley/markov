@@ -86,6 +86,7 @@ void rem_node(NODE *node) {
 		*prev_s = NULL;
 
 	while(curr_p) {
+		curr_s = curr_p->succ;
 		while(curr_s) {
 			prev_s = curr_s;
 			curr_s = curr_s->next;
@@ -153,7 +154,7 @@ static NODE *insert_node(HASH_TABLE *ht, unsigned key, char *word, NODE *prev_no
 		ht->bucket[key] = create_node(key, word, !prev_node ? 1:0, is_last);
 		node = ht->bucket[key];
 	}
-	
+
 	// PREC INSERTION
 	if(prev_node) {
 		// update freq of prec, if does not exist, insert at head. set temp to prec node for next section
@@ -169,6 +170,7 @@ static NODE *insert_node(HASH_TABLE *ht, unsigned key, char *word, NODE *prev_no
 	else {
 		ht->sentences++;
 	}
+
 	// SUCC INSERTION
 	// prev_prec shold be equal to head of the previous-prev_node's prec list
 	if(prev_prec) {
@@ -185,9 +187,11 @@ static NODE *insert_node(HASH_TABLE *ht, unsigned key, char *word, NODE *prev_no
 		else {
 			add_succ(prev_prec, node);
 		}
+		prev_prec = prev_node->prec;
 	}
-	prev_prec = prev_node->prec;
+	
 	ht->count++;
+
 	return node;
 }
 
@@ -396,6 +400,10 @@ unsigned get_sentences(HASH_TABLE *ht) {
 }
 
 int main() {
-	printf("aight\n");
+	HASH_TABLE *ht = create_table();
+	FILE *fp = fopen("test.txt", "r");
+	insert_words(ht, fp);
+	print_all_nodes(ht);
+	
 	return 1;
 }
