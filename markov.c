@@ -87,7 +87,6 @@ static unsigned end_sentence(NODE *node) {
 	}
 	return 0;
 }
-
 static double gen_rand() {
 	return ldexp(pcg32_random_r(&rng), -32); // random number [0, 1)
 }
@@ -229,7 +228,7 @@ static NODE *pick_next_word(NODE *node) {
 }
 
 /* Function:	build_sentence() 
-* Description:	Main loop for building a sentence.
+ * Description:	Main loop for building a sentence.
  */
 
 void build_sentence(HASH_TABLE *ht) {

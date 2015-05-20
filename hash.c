@@ -14,9 +14,11 @@ static unsigned gen_hash(char *);
 static NODE *create_node(unsigned, char *, unsigned, unsigned);
 static NODE *insert_node(HASH_TABLE *, unsigned, char *, NODE *, unsigned);
 static void rem_node(NODE *);
-static void add_succ(NODE *, NODE *); 
+static void add_succ(PREC *, NODE *); 
 static unsigned parse(char *);
 static void print_nodes_in_bucket(NODE *);
+static PREC *find_prec(NODE *, NODE *);
+static PREC *add_prec(NODE *, PREC *);
 
 /* Function: 	gen_hash()
  * Description:	Generate 16-bit hash value for a given input string.
@@ -78,13 +80,20 @@ HASH_TABLE *clear_table(HASH_TABLE *ht) {
  */
 
 void rem_node(NODE *node) {
-	SUCC 	*curr = node->succ,
-		*prev = NULL;
+	PREC 	*curr_p = node->prec,
+		*prev_p = NULL;
+	SUCC	*curr_s,
+		*prev_s = NULL;
 
-	while(curr) {
-		prev = curr;
-		curr = curr->next;
-		free(prev);
+	while(curr_p) {
+		while(curr_s) {
+			prev_s = curr_s;
+			curr_s = curr_s->next;
+			free(prev_s);
+		}
+		prev_p = curr_p;
+		curr_p = curr_p->next;
+		free(prev_p);
 	}
 	printf("key '%u', freeing '%s'\n", node->key, node->word);
 	free(node->word);
@@ -106,10 +115,14 @@ void rem_table(HASH_TABLE *ht) {
  */
 
 static NODE *insert_node(HASH_TABLE *ht, unsigned key, char *word, NODE *prev_node, unsigned is_last) {
+	static PREC *prev_prec = NULL;
+	PREC	*temp;
 	NODE 	*node,
 		*prev = NULL;
 
 	//printf("bytes in word: %lu\n", strlen(word) + 1);
+
+	// TABLE INSERTION
 	if(ht->bucket[key]) {
 		node = ht->bucket[key];
 		//printf("collision '%s' when inserting '%s'\n", ht->bucket[key]->word, word);
@@ -140,11 +153,74 @@ static NODE *insert_node(HASH_TABLE *ht, unsigned key, char *word, NODE *prev_no
 		ht->bucket[key] = create_node(key, word, !prev_node ? 1:0, is_last);
 		node = ht->bucket[key];
 	}
-	if(!prev_node)
+	
+	// PREC INSERTION
+	if(prev_node) {
+		// update freq of prec, if does not exist, insert at head. set temp to prec node for next section
+		temp = find_prec(prev_node, node);
+		if(!temp) {
+			node->prec = add_prec(prev_node, node->prec);
+			temp = node->prec;
+			temp->freq++;
+			temp->num_succ++;
+		}
+		temp->num_succ++;
+	}
+	else {
 		ht->sentences++;
+	}
+	// SUCC INSERTION
+	// prev_prec shold be equal to head of the previous-prev_node's prec list
+	if(prev_prec) {
+		SUCC	*curr = prev_prec->succ,
+			*prev = NULL;
+
+		while(curr && curr->node != node) {
+			prev = curr;
+			curr = curr->next;
+		}
+		if(curr) {
+			curr->freq++;
+		}
+		else {
+			add_succ(prev_prec, node);
+		}
+	}
+	prev_prec = prev_node->prec;
 	ht->count++;
-	add_succ(prev_node, node);
 	return node;
+}
+
+/* Function:	add_prec()
+ * Description:	Add new prec to head of list of preceeding words (nodes).
+ */
+
+static PREC *add_prec(NODE *prev_node, PREC *prec) {
+	PREC *new = malloc(sizeof(*new));
+	new->node = prev_node;
+	new->freq = 1;
+	new->sum_succ = 0;
+	new->num_succ = 0;
+	new->next = prec;
+	
+	return new;
+}
+	
+/* Function:	find_prec()
+ * Description:	Given a node, check if prev_node exists in node's list of preceeding
+ *		nodes.
+ */
+
+static PREC *find_prec(NODE *prev_node, NODE *node) {
+	PREC	*curr,
+		*prev = NULL;
+	
+	curr = node->prec;
+	while(curr && curr->node != prev_node) {
+		prev = curr;
+		curr = curr->next;
+	}
+	return curr ? curr : prev;
 }
 
 /* Function:	add_succ()
@@ -152,40 +228,14 @@ static NODE *insert_node(HASH_TABLE *ht, unsigned key, char *word, NODE *prev_no
  *		successors and update frequency.
  */
 
-static void add_succ(NODE *prev_node, NODE *node) {
-	SUCC	*curr_s,
-		*prev_s,
-		*succ;
+static void add_succ(PREC *prev_prec, NODE *node) {
+	SUCC	*succ;
 
-	if(prev_node) {
-		//printf("adding '%s' to '%s'->succ\n", node->word, prev_node->word);
-		curr_s = prev_node->succ;
-		prev_s = NULL;
-		while(curr_s && strcmp(curr_s->node->word, node->word)) {
-			prev_s = curr_s;
-			curr_s = curr_s->next;
-		}
-		// succ exists
-		if(curr_s) {
-			curr_s->freq++;
-		}
-		else {
-			succ = malloc(sizeof(*succ));
-			succ->next = NULL;
-			succ->node = node;
-			succ->freq = 1;
-			// if succ does not exist and list is not empty
-			if(prev_s) {	
-				prev_s->next = succ;
-			}
-			// if list is empty
-			else {
-				prev_node->succ = succ;
-			}
-			prev_node->num_succ++;
-		}
-		prev_node->sum_succ++;
-	}
+	//printf("adding '%s' to '%s'->succ\n", node->word, prev_node->word);
+	succ = malloc(sizeof(*succ));
+	succ->next = prev_prec->succ;
+	succ->node = node;
+	succ->freq = 1;
 }
 
 /* Function: 	create_node()
@@ -203,11 +253,11 @@ static NODE *create_node(unsigned key, char *word, unsigned is_first, unsigned i
 	node->freq = 1;
 	node->first = is_first;
 	node->last = is_last;
-	node->sum_succ = 0;
-	node->num_succ = 0;
+	node->sum_prec = 0;
+	node->num_prec = 0;
 	node->traversed = 0;
 	node->next = NULL;
-	node->succ = NULL;
+	node->prec= NULL;
 	return node;
 }
 
@@ -218,7 +268,7 @@ static NODE *create_node(unsigned key, char *word, unsigned is_first, unsigned i
  */
 
 static void print_nodes_in_bucket(NODE *node) {
-	SUCC	*temp;
+	PREC	*temp;
 
 	while(node) {
 		printf("WORD: 	'%s'\n", node->word);
@@ -226,11 +276,11 @@ static void print_nodes_in_bucket(NODE *node) {
 		printf("freq:	%u\n", node->freq);
 		printf("first:	%u, %%:\t%.3f\n", node->first, (float)node->first/node->freq);
 		printf("last:	%u, %%:\t%.3f\n", node->last, (float)node->last/node->freq);
-		printf("succfrq:%u\n", node->sum_succ);
-		printf("succnum:%u\n", node->num_succ);
-		if(node->sum_succ) {
-			printf("SUCC:\n");
-			temp = node->succ;
+		printf("precfrq:%u\n", node->sum_prec);
+		printf("preccnum:%u\n", node->num_prec);
+		if(node->sum_prec) {
+			printf("PREC:\n");
+			temp = node->prec;
 			while(temp) {
 				printf("\tWORD:\t'%s'\n", temp->node->word);
 				printf("\tfreq:\t%u\n", temp->freq);
@@ -343,4 +393,9 @@ NODE *get_next_node(HASH_TABLE *ht) {
 unsigned get_sentences(HASH_TABLE *ht) {
 	assert(ht);
 	return ht->sentences;
+}
+
+int main() {
+	printf("aight\n");
+	return 1;
 }

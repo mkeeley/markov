@@ -13,27 +13,30 @@
 #define MS	"Ms."
 
 typedef struct succ {
-	unsigned freq;
-	struct node *node;
-	struct succ *next;
+	struct node *node;	// node of the successor
+	struct succ *next;	// the next successor
+	unsigned freq;		// occurrences
 } SUCC;
 
 typedef struct prec {
+	struct node *node;	// preceeding node
 	struct succ *succ;	// list of successors
+	struct prec *next;	// the next preceeding node
 	unsigned sum_succ;	// total occurrences of successors
 	unsigned num_succ;	// number of unique successors
+	unsigned freq;		// occurrences
 } PREC;
 
 typedef struct node {
-	unsigned key;
+	unsigned key;		// hash value
 	unsigned first;		// num times word is first in sentence
 	unsigned last;		// num times word is last in setence
 	unsigned freq;		// num times word occurs
-	unsigned sum_succ;	// total freq of all succ nodes
-	unsigned num_succ;	// total number of unique succ nodes
-	struct node *next;
-	char	*word;
-	SUCC	*succ;
+	unsigned sum_prec;	// total freq of all succ nodes
+	unsigned num_prec;	// total number of unique succ nodes
+	struct node *next;	// collision: next node
+	char	*word;		// hashed word
+	PREC	*prec;		// list of preceeding words (nodes)
 	unsigned traversed;	// penalty for words that have been chosen already - reduce loops and over reuse of more probable words
 } NODE;
 	
