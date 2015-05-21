@@ -17,7 +17,6 @@ static void rem_node(NODE *);
 static SUCC *add_succ(SUCC *, NODE *); 
 static unsigned parse(char *);
 static void print_nodes_in_bucket(NODE *);
-static PREC *find_prec(NODE *, NODE *);
 static PREC *add_prec(NODE *, PREC *);
 static SUCC *find_succ(NODE *, SUCC *);
 
@@ -198,16 +197,17 @@ static NODE *insert_node(HASH_TABLE *ht, unsigned key, char *word, NODE *prev_no
 		}
 		else {
 			prev_prec->succ = add_succ(prev_prec->succ, node);
+			prev_prec->num_succ++;
 		}
+		prev_prec->sum_succ++;
 	}
-	// set new prec pointer if prev_node exists
+	// set new prec pointer if prev_node exists, must come after setting prev_prec's succ
 	if(prev_node) {
 		prev_prec = find_prec(prev_node, node);
 	}
 	// if last word in sentence, reset prev pointer, there is no preceeding word before start of sentence
 	if(is_last)
 		prev_prec = NULL;
-	
 	ht->count++;
 
 	return node;
@@ -234,7 +234,7 @@ static PREC *add_prec(NODE *prev_node, PREC *prec) {
  *		nodes.
  */
 
-static PREC *find_prec(NODE *prev_node, NODE *node) {
+PREC *find_prec(NODE *prev_node, NODE *node) {
 	PREC	*curr,
 		*prev = NULL;
 	

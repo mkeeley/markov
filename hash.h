@@ -56,6 +56,7 @@ void insert_words(HASH_TABLE *, FILE *);
 void print_all_nodes(HASH_TABLE *);
 void rem_table(HASH_TABLE *);
 unsigned get_sentences(HASH_TABLE *);
+PREC *find_prec(NODE *, NODE *);
 
 #endif /* HASH_H */
 
