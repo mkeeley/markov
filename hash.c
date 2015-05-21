@@ -14,7 +14,7 @@ static unsigned gen_hash(char *);
 static NODE *create_node(unsigned, char *, unsigned, unsigned);
 static NODE *insert_node(HASH_TABLE *, unsigned, char *, NODE *, unsigned);
 static void rem_node(NODE *);
-static SUCC *add_succ(PREC *, NODE *); 
+static SUCC *add_succ(SUCC *, NODE *); 
 static unsigned parse(char *);
 static void print_nodes_in_bucket(NODE *);
 static PREC *find_prec(NODE *, NODE *);
@@ -176,11 +176,7 @@ static NODE *insert_node(HASH_TABLE *ht, unsigned key, char *word, NODE *prev_no
 				succ->freq++;
 			}
 			else {
-				succ = malloc(sizeof(*succ));
-				succ->node = node;
-				succ->next = prev_node->succ;
-				succ->freq = 1;
-				prev_node->succ = succ;
+				prev_node->succ = add_succ(prev_node->succ, node);
 				prev_node->num_succ++;
 			}
 			prev_was_first = 0;
@@ -201,7 +197,7 @@ static NODE *insert_node(HASH_TABLE *ht, unsigned key, char *word, NODE *prev_no
 			curr->freq++;
 		}
 		else {
-			prev_prec->succ = add_succ(prev_prec, node);
+			prev_prec->succ = add_succ(prev_prec->succ, node);
 		}
 	}
 	// set new prec pointer if prev_node exists
@@ -255,12 +251,12 @@ static PREC *find_prec(NODE *prev_node, NODE *node) {
  *		successors and update frequency.
  */
 
-static SUCC *add_succ(PREC *prev_prec, NODE *node) {
+static SUCC *add_succ(SUCC *head, NODE *node) {
 	SUCC	*succ;
 
 	//printf("adding '%s' to '%s'->succ\n", node->word, prev_node->word);
 	succ = malloc(sizeof(*succ));
-	succ->next = prev_prec->succ;
+	succ->next = head;
 	succ->node = node;
 	succ->freq = 1;
 	return succ;
