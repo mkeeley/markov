@@ -164,7 +164,6 @@ static NODE *pick_first_word(HASH_TABLE *ht) {
 	//printf("total sum dist: %lf\n", sum_dist);
 	printf("%s", buf);
 
-	node->traversed++;
 	return node;
 }
 	
@@ -271,7 +270,6 @@ static NODE *pick_next_word(NODE *node) {
 		printf(". NO PREC\n");
 		exit(1);
 	}
-	node->traversed++;
 	return node;
 }
 
@@ -289,16 +287,23 @@ void build_sentence(HASH_TABLE *ht) {
 	}
 }
 
-int main() {
+int main(int argc, char **argv) {
 	HASH_TABLE *ht;
 	FILE	*fp;
 
+	if(argc != 2) {
+		printf("./markov {text-file}\n");
+		exit(1);
+	}
+	fp = fopen(argv[1], "r");
+	if(!fp) {
+		printf("could not find '%s'\n", argv[1]);
+		exit(1);
+	}
 	// init pcg rng
 	pcg32_srandom_r(&rng, time(NULL), (intptr_t)&rng);
 	ht = create_table();
 	// test parser
-	fp = fopen("test3.txt", "r");
-	//fp = fopen("test.txt", "r");
 	insert_words(ht, fp);
 	//print_all_nodes(ht);
 	
