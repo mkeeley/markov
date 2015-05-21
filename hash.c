@@ -115,6 +115,7 @@ void rem_table(HASH_TABLE *ht) {
  * Description:	Inserts the key/word pair into the hash table and returns the current node
  *		to use as next function call's prev_node
  */
+// TODO: split into multiple functions, currently is cumbersome pos
 
 static NODE *insert_node(HASH_TABLE *ht, unsigned key, char *word, NODE *prev_node, unsigned is_last) {
 	static PREC *prev_prec = NULL;
@@ -123,7 +124,7 @@ static NODE *insert_node(HASH_TABLE *ht, unsigned key, char *word, NODE *prev_no
 	NODE 	*node,
 		*prev = NULL;
 
-	printf("adding %s to table\n", word);
+	//printf("adding %s to table\n", word);
 
 	// TABLE INSERTION
 	if(ht->bucket[key]) {
@@ -163,7 +164,6 @@ static NODE *insert_node(HASH_TABLE *ht, unsigned key, char *word, NODE *prev_no
 		temp = find_prec(prev_node, node);
 		if(!temp) {
 			node->prec = add_prec(prev_node, node->prec);
-			printf("added '%s' to current node, '%s', list of prec\n", node->prec->node->word, word);
 			node->sum_prec++;
 		}
 		node->num_prec++;
@@ -181,8 +181,10 @@ static NODE *insert_node(HASH_TABLE *ht, unsigned key, char *word, NODE *prev_no
 				succ->next = prev_node->succ;
 				succ->freq = 1;
 				prev_node->succ = succ;
+				prev_node->num_succ++;
 			}
 			prev_was_first = 0;
+			prev_node->sum_succ++;
 		}
 	}
 	else {
@@ -204,9 +206,7 @@ static NODE *insert_node(HASH_TABLE *ht, unsigned key, char *word, NODE *prev_no
 	}
 	// set new prec pointer if prev_node exists
 	if(prev_node) {
-		printf("LOOKING\n");
 		prev_prec = find_prec(prev_node, node);
-		printf("prev_prec = '%s'\n", prev_prec->node->word);
 	}
 	// if last word in sentence, reset prev pointer, there is no preceeding word before start of sentence
 	if(is_last)
@@ -299,6 +299,8 @@ static NODE *create_node(unsigned key, char *word, unsigned is_first, unsigned i
 	node->last = is_last;
 	node->sum_prec = 0;
 	node->num_prec = 0;
+	node->sum_succ = 0;
+	node->num_succ = 0;
 	node->traversed = 0;
 	node->next = NULL;
 	node->prec= NULL;
@@ -457,7 +459,7 @@ unsigned get_sentences(HASH_TABLE *ht) {
 	assert(ht);
 	return ht->sentences;
 }
-
+/*
 int main() {
 	HASH_TABLE *ht = create_table();
 	FILE *fp = fopen("test.txt", "r");
@@ -466,3 +468,4 @@ int main() {
 	
 	return 1;
 }
+*/

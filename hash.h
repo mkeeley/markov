@@ -32,8 +32,10 @@ typedef struct node {
 	unsigned first;		// num times word is first in sentence
 	unsigned last;		// num times word is last in setence
 	unsigned freq;		// num times word occurs
-	unsigned sum_prec;	// total freq of all succ nodes
-	unsigned num_prec;	// total number of unique succ nodes
+	unsigned sum_prec;	// total freq of all prec nodes
+	unsigned num_prec;	// total number of unique prec nodes
+	unsigned sum_succ;	// ONLY FOR BEGINNING OF SENTENCES, total freq of all succ nodes
+	unsigned num_succ;	// ONLY FOR BEGINNING OF SENTENCES, total number of unique succ nodes
 	struct node *next;	// collision: next node
 	char	*word;		// hashed word
 	PREC	*prec;		// list of preceeding words (nodes)

@@ -81,10 +81,10 @@ static unsigned end_sentence(NODE *node) {
 			return 1;
 		}
 	}
-	if(node->num_succ == 0) {
-		printf(".\n");
-		return 1;
-	}
+	//if(node->num_succ == 0) {
+	//	printf(".\n");
+	//	return 1;
+	//}
 	return 0;
 }
 static double gen_rand() {
@@ -147,7 +147,7 @@ static NODE *pick_first_word(HASH_TABLE *ht) {
 	
 	build_density(density, choices, sentences);
 	for(i = 0; i < choices; i++) {
-		//printf("freq: %3u, prob: %.5lf, dist: %.5lf, word: %s\n", nodes[i]->first, (double) nodes[i]->first/sentences, density[i], nodes[i]->word);
+		printf("freq: %3u, prob: %.5lf, dist: %.5lf, word: %s\n", nodes[i]->first, (double) nodes[i]->first/sentences, density[i], nodes[i]->word);
 		sum_dist += (double)nodes[i]->first/sentences;
 	}
 
@@ -160,10 +160,10 @@ static NODE *pick_first_word(HASH_TABLE *ht) {
 
 	strcpy(buf, node->word);
 	buf[0] = toupper(buf[0]);
-	//printf("node chosen: %s\n", buf);
-	//printf("sentences:\t%u\n", sentences);
-	//printf("cumulative sum dist: %.3lf\n", word_prob);
-	//printf("total sum dist: %lf\n", sum_dist);
+	printf("node chosen: %s\n", buf);
+	printf("sentences:\t%u\n", sentences);
+	printf("gen rand: %.3lf\n", word_prob);
+	printf("total sum dist: %lf\n", sum_dist);
 	printf("%s", buf);
 
 	node->traversed++;
@@ -177,17 +177,20 @@ static NODE *pick_first_word(HASH_TABLE *ht) {
 
 static NODE *pick_next_word(NODE *node) {
 	SUCC 	*succ = NULL;
+	NODE	*prev_node;
+	static unsigned was_first_word = 1;
 	unsigned i = 0,
-		size = 0,
-		total = 0;
+		size = node->num_succ,
+		total = node->sum_succ,
+		size_prec = node->num_prec,
+		total_prec = node->sum_prec;
 	double 	sum_dist = 0,
 		word_prob = gen_rand();
 
-	size = node->num_succ;
-	total = node->sum_succ;
-	//printf("total succ words: %u\n", size);
-	//printf("total freq words: %u\n", total);
-	if(node->succ) {
+	printf("total succ words: %u\n", size);
+	printf("total freq words: %u\n", total);
+	
+	if(was_first_word) {
 		SUCC *succ_nodes[size];
 		double density[size];
 
@@ -203,7 +206,7 @@ static NODE *pick_next_word(NODE *node) {
 		}
 		build_density(density, size, total);
 		for(i = 0; i < size; i++) {
-		//	printf("freq: %*u, distr: %.4lf, word: %s\n", 3, succ_nodes[i]->freq, density[i], succ_nodes[i]->node->word);
+			printf("freq: %*u, distr: %.4lf, word: %s\n", 3, succ_nodes[i]->freq, density[i], succ_nodes[i]->node->word);
 		}
 		for(i = 0; i < size; i++) {
 			if(word_prob < density[i] && !succ_nodes[i]->node->traversed) {
@@ -215,9 +218,10 @@ static NODE *pick_next_word(NODE *node) {
 			printf("premature END\n");
 			exit(1);
 		}
-		//printf("next word: %s\n", node->word);
-		//printf("total sum dist: %lf\n", sum_dist);
+		printf("next word: %s\n", node->word);
+		printf("total sum dist: %lf\n", sum_dist);
 		printf(" %s", node->word);
+		was_first_word = 0;
 	}
 	else {
 		printf("premature END\n");
@@ -236,9 +240,10 @@ void build_sentence(HASH_TABLE *ht) {
 	assert(ht);
 	
 	node = pick_first_word(ht);
-	while(!end_sentence(node)) {
-		node = pick_next_word(node);
-	}
+	node = pick_next_word(node);
+//	while(!end_sentence(node)) {
+//		node = pick_next_word(node);
+//	}
 }
 
 int main() {
@@ -249,7 +254,8 @@ int main() {
 	pcg32_srandom_r(&rng, time(NULL), (intptr_t)&rng);
 	ht = create_table();
 	// test parser
-	fp = fopen("test3.txt", "r");
+	//fp = fopen("test3.txt", "r");
+	fp = fopen("test.txt", "r");
 	insert_words(ht, fp);
 	//print_all_nodes(ht);
 	
