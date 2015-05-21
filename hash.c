@@ -14,7 +14,7 @@ static unsigned gen_hash(char *);
 static NODE *create_node(unsigned, char *, unsigned, unsigned);
 static NODE *insert_node(HASH_TABLE *, unsigned, char *, NODE *, unsigned);
 static void rem_node(NODE *);
-static void add_succ(PREC *, NODE *); 
+static SUCC *add_succ(PREC *, NODE *); 
 static unsigned parse(char *);
 static void print_nodes_in_bucket(NODE *);
 static PREC *find_prec(NODE *, NODE *);
@@ -117,11 +117,13 @@ void rem_table(HASH_TABLE *ht) {
 
 static NODE *insert_node(HASH_TABLE *ht, unsigned key, char *word, NODE *prev_node, unsigned is_last) {
 	static PREC *prev_prec = NULL;
+	static unsigned prev_was_first = 0;
 	PREC	*temp;
 	NODE 	*node,
 		*prev = NULL;
 
 	//printf("bytes in word: %lu\n", strlen(word) + 1);
+	printf("adding %s to table\n", word);
 
 	// TABLE INSERTION
 	if(ht->bucket[key]) {
@@ -161,14 +163,35 @@ static NODE *insert_node(HASH_TABLE *ht, unsigned key, char *word, NODE *prev_no
 		temp = find_prec(prev_node, node);
 		if(!temp) {
 			node->prec = add_prec(prev_node, node->prec);
-			temp = node->prec;
-			temp->freq++;
-			temp->num_succ++;
+			printf("added '%s' to current node, '%s', list of prec\n", node->prec->node->word, word);
+			node->sum_prec++;
 		}
-		temp->num_succ++;
+		node->num_prec++;
+
+		// check if prev word was first in sentence, if so then add to list of succ for prev_node
+		if(prev_was_first) {
+			SUCC	*succ = prev_node->succ,
+				*prev = NULL;
+			while(succ && succ->node) {
+				prev = succ;
+				succ = succ->next;
+			}
+			if(succ) {
+				succ->freq++;
+			}
+			else {
+				prev = malloc(sizeof(*prev));
+				prev->node = node;
+				prev->next = prev_node->succ;
+				prev->freq = 1;
+				prev_node->succ = prev;
+			}
+			prev_was_first = 0;
+		}
 	}
 	else {
 		ht->sentences++;
+		prev_was_first = 1;
 	}
 
 	// SUCC INSERTION
@@ -176,19 +199,31 @@ static NODE *insert_node(HASH_TABLE *ht, unsigned key, char *word, NODE *prev_no
 	if(prev_prec) {
 		SUCC	*curr = prev_prec->succ,
 			*prev = NULL;
-
+		printf("IN prev selection\n");
 		while(curr && curr->node != node) {
+			printf("here\n");
 			prev = curr;
 			curr = curr->next;
 		}
+		printf("MIDDLE\n");
 		if(curr) {
 			curr->freq++;
 		}
 		else {
-			add_succ(prev_prec, node);
+			printf("word not found in prev prev_node's list of succ\n");
+			prev_prec->succ = add_succ(prev_prec, node);
 		}
-		prev_prec = prev_node->prec;
+		printf("OUT prev selection\n");
 	}
+	// set new prec pointer if prev_node exists
+	if(prev_node) {
+		printf("LOOKING\n");
+		prev_prec = find_prec(prev_node, node);
+		printf("prev_prec = '%s'\n", prev_prec->node->word);
+	}
+	// if last word in sentence, reset prev pointer, there is no preceeding word before start of sentence
+	if(is_last)
+		prev_prec = NULL;
 	
 	ht->count++;
 
@@ -206,6 +241,7 @@ static PREC *add_prec(NODE *prev_node, PREC *prec) {
 	new->sum_succ = 0;
 	new->num_succ = 0;
 	new->next = prec;
+	new->succ = NULL;
 	
 	return new;
 }
@@ -232,7 +268,7 @@ static PREC *find_prec(NODE *prev_node, NODE *node) {
  *		successors and update frequency.
  */
 
-static void add_succ(PREC *prev_prec, NODE *node) {
+static SUCC *add_succ(PREC *prev_prec, NODE *node) {
 	SUCC	*succ;
 
 	//printf("adding '%s' to '%s'->succ\n", node->word, prev_node->word);
@@ -240,6 +276,7 @@ static void add_succ(PREC *prev_prec, NODE *node) {
 	succ->next = prev_prec->succ;
 	succ->node = node;
 	succ->freq = 1;
+	return succ;
 }
 
 /* Function: 	create_node()
@@ -262,6 +299,7 @@ static NODE *create_node(unsigned key, char *word, unsigned is_first, unsigned i
 	node->traversed = 0;
 	node->next = NULL;
 	node->prec= NULL;
+	node->succ = NULL;
 	return node;
 }
 
@@ -272,7 +310,8 @@ static NODE *create_node(unsigned key, char *word, unsigned is_first, unsigned i
  */
 
 static void print_nodes_in_bucket(NODE *node) {
-	PREC	*temp;
+	PREC	*prec;
+	SUCC	*succ;
 
 	while(node) {
 		printf("WORD: 	'%s'\n", node->word);
@@ -281,15 +320,32 @@ static void print_nodes_in_bucket(NODE *node) {
 		printf("first:	%u, %%:\t%.3f\n", node->first, (float)node->first/node->freq);
 		printf("last:	%u, %%:\t%.3f\n", node->last, (float)node->last/node->freq);
 		printf("precfrq:%u\n", node->sum_prec);
-		printf("preccnum:%u\n", node->num_prec);
+		printf("precnum:%u\n", node->num_prec);
+		if(node->first) {
+			succ = node->succ;
+			printf("WAS FIRST?:\n");
+			while(succ) {
+				printf("\t\tWORD:\t'%s'\n", succ->node->word);
+				printf("\t\tfreq:\t%u\n", succ->freq);
+				printf("\t\t----\n");
+				succ = succ->next;
+			}
+		}
 		if(node->sum_prec) {
 			printf("PREC:\n");
-			temp = node->prec;
-			while(temp) {
-				printf("\tWORD:\t'%s'\n", temp->node->word);
-				printf("\tfreq:\t%u\n", temp->freq);
+			prec = node->prec;
+			while(prec) {
+				printf("\tWORD:\t'%s'\n", prec->node->word);
+				printf("\tfreq:\t%u\n", prec->freq);
 				printf("\t----\n");
-				temp = temp->next;
+				succ = prec->succ;
+				while(succ) {
+					printf("\t\tWORD:\t'%s'\n", succ->node->word);
+					printf("\t\tfreq:\t%u\n", succ->freq);
+					printf("\t\t----\n");
+					succ = succ->next;
+				}
+				prec = prec->next;
 			}
 		}
 		node = node->next;

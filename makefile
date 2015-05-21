@@ -1,4 +1,4 @@
-CFLAGS      = -Wall 
+CFLAGS      = -Wall -g
 LINKS	    = 
 MARKOV_OBJS = markov.o  pcg-c-basic-0.9/pcg_basic.o
 MARKOV_PROG = markov 
