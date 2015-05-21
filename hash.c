@@ -19,6 +19,7 @@ static unsigned parse(char *);
 static void print_nodes_in_bucket(NODE *);
 static PREC *find_prec(NODE *, NODE *);
 static PREC *add_prec(NODE *, PREC *);
+static SUCC *find_succ(NODE *, SUCC *);
 
 /* Function: 	gen_hash()
  * Description:	Generate 16-bit hash value for a given input string.
@@ -122,7 +123,6 @@ static NODE *insert_node(HASH_TABLE *ht, unsigned key, char *word, NODE *prev_no
 	NODE 	*node,
 		*prev = NULL;
 
-	//printf("bytes in word: %lu\n", strlen(word) + 1);
 	printf("adding %s to table\n", word);
 
 	// TABLE INSERTION
@@ -170,21 +170,17 @@ static NODE *insert_node(HASH_TABLE *ht, unsigned key, char *word, NODE *prev_no
 
 		// check if prev word was first in sentence, if so then add to list of succ for prev_node
 		if(prev_was_first) {
-			SUCC	*succ = prev_node->succ,
-				*prev = NULL;
-			while(succ && succ->node) {
-				prev = succ;
-				succ = succ->next;
-			}
+			SUCC	*succ = find_succ(node, prev_node->succ);
+
 			if(succ) {
 				succ->freq++;
 			}
 			else {
-				prev = malloc(sizeof(*prev));
-				prev->node = node;
-				prev->next = prev_node->succ;
-				prev->freq = 1;
-				prev_node->succ = prev;
+				succ = malloc(sizeof(*succ));
+				succ->node = node;
+				succ->next = prev_node->succ;
+				succ->freq = 1;
+				prev_node->succ = succ;
 			}
 			prev_was_first = 0;
 		}
@@ -197,23 +193,14 @@ static NODE *insert_node(HASH_TABLE *ht, unsigned key, char *word, NODE *prev_no
 	// SUCC INSERTION
 	// prev_prec shold be equal to head of the previous-prev_node's prec list
 	if(prev_prec) {
-		SUCC	*curr = prev_prec->succ,
-			*prev = NULL;
-		printf("IN prev selection\n");
-		while(curr && curr->node != node) {
-			printf("here\n");
-			prev = curr;
-			curr = curr->next;
-		}
-		printf("MIDDLE\n");
+		SUCC	*curr = find_succ(node, prev_prec->succ);
+
 		if(curr) {
 			curr->freq++;
 		}
 		else {
-			printf("word not found in prev prev_node's list of succ\n");
 			prev_prec->succ = add_succ(prev_prec, node);
 		}
-		printf("OUT prev selection\n");
 	}
 	// set new prec pointer if prev_node exists
 	if(prev_node) {
@@ -260,7 +247,7 @@ static PREC *find_prec(NODE *prev_node, NODE *node) {
 		prev = curr;
 		curr = curr->next;
 	}
-	return curr ? curr : prev;
+	return curr;
 }
 
 /* Function:	add_succ()
@@ -277,6 +264,22 @@ static SUCC *add_succ(PREC *prev_prec, NODE *node) {
 	succ->node = node;
 	succ->freq = 1;
 	return succ;
+}
+
+/* Function:	find_succ()
+ * Description:	Given a pointer to list of successors, find the node in the given list. If not found,
+ *		then return NULL.
+ */
+
+static SUCC *find_succ(NODE *needle, SUCC *haystack) {
+	SUCC	*curr = haystack,
+		*prev = NULL;
+
+	while(curr && curr->node != needle) {
+		prev = curr;
+		curr = curr->next;
+	}
+	return curr;
 }
 
 /* Function: 	create_node()
