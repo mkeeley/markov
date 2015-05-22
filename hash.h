@@ -7,10 +7,7 @@
 #include <assert.h>
 #include <string.h>
 #include <ctype.h>
-
-#define MR 	"Mr."
-#define MRS	"Mrs."
-#define MS	"Ms."
+#include "parse.h"
 
 typedef struct succ {
 	struct node *node;	// node of the successor

@@ -15,7 +15,6 @@ static NODE *create_node(unsigned, char *, unsigned, unsigned);
 static NODE *insert_node(HASH_TABLE *, unsigned, char *, NODE *, unsigned);
 static void rem_node(NODE *);
 static SUCC *add_succ(SUCC *, NODE *); 
-static unsigned parse(char *);
 static void print_nodes_in_bucket(NODE *);
 static PREC *add_prec(NODE *, PREC *);
 static SUCC *find_succ(NODE *, SUCC *);
@@ -376,7 +375,7 @@ void insert_words(HASH_TABLE *ht, FILE *fp) {
 	unsigned is_last = 0;
 	
 	while(fscanf(fp, "%s", buf) != EOF) {
-		is_last = parse(buf);
+		is_last = (unsigned) parse(buf);
 		node = insert_node(ht, gen_hash(buf), buf, node, is_last);
 		// if last word in sentence, reset node pointer and is_last flag
 		// node == NULL flags insert_node that next word is first in sentence
@@ -386,35 +385,6 @@ void insert_words(HASH_TABLE *ht, FILE *fp) {
 		}
 	}
 	
-}
-
-/* Function:	parse()
- *		Given a word, this function will remove unsupported
- *		characters it.  The function also determines whether or
- *		not the word is at the beginning or the end of a sentence -
- *		did we find '. ? !'?
- */
-
-static unsigned parse(char *word) {
-	char	*src,
-		*dst;
-	unsigned len,
-		 is_last = 0;
-
-	len = strlen(word);
-	if(len && (word[len-1] == '.' || word[len-1] == '!' || word[len-1] == '?')) 
-		is_last = 1;
-	if(!strcmp(word, MS) || !strcmp(word, MRS) || !strcmp(word, MR))
-		is_last = 0;
-	src = dst = word;
-	while(*src) {
-		//*src = tolower(*src);
-		if(('a' <= *src && *src <= 'z') || ('A' <= *src && *src <= 'Z') || *src == '\'' || *src == '-' || ('0' <= *src && *src <= '9'))
-			*dst++ = *src;
-		src++;
-	}
-	*dst = '\0';
-	return is_last;
 }
 
 /* Function:	get_next_node()
