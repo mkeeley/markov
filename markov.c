@@ -144,10 +144,12 @@ static NODE *pick_first_word(HASH_TABLE *ht) {
 		density[i] = nodes[i]->first;
 	
 	build_density(density, choices, sentences);
+#if DEBUG
 	for(i = 0; i < choices; i++) {
-		//printf("freq: %3u, prob: %.5lf, dist: %.5lf, word: %s\n", nodes[i]->first, (double) nodes[i]->first/sentences, density[i], nodes[i]->word);
+		printf("freq: %3u, prob: %.5lf, dist: %.5lf, word: %s\n", nodes[i]->first, (double) nodes[i]->first/sentences, density[i], nodes[i]->word);
 		sum_dist += (double)nodes[i]->first/sentences;
 	}
+#endif
 
 	for(i = 0; i < choices; i++) {
 		if(word_prob < density[i]) {
@@ -158,10 +160,12 @@ static NODE *pick_first_word(HASH_TABLE *ht) {
 
 	strcpy(buf, node->word);
 	buf[0] = toupper(buf[0]);
-	//printf("node chosen: %s\n", buf);
-	//printf("sentences:\t%u\n", sentences);
-	//printf("gen rand: %.3lf\n", word_prob);
-	//printf("total sum dist: %lf\n", sum_dist);
+#if DEBUG
+	printf("node chosen: %s\n", buf);
+	printf("sentences:\t%u\n", sentences);
+	printf("gen rand: %.3lf\n", word_prob);
+	printf("total sum dist: %lf\n", sum_dist);
+#endif
 	printf("%s", buf);
 
 	return node;
@@ -200,9 +204,11 @@ static NODE *pick_next_word(NODE *node) {
 			density[i] = succ_nodes[i]->freq;
 		}
 		build_density(density, size, total);
-		//for(i = 0; i < size; i++) {
-		//	printf("freq: %*u, distr: %.4lf, word: %s\n", 3, succ_nodes[i]->freq, density[i], succ_nodes[i]->node->word);
-		//}
+#if DEBUG
+		for(i = 0; i < size; i++) {
+			printf("freq: %*u, distr: %.4lf, word: %s\n", 3, succ_nodes[i]->freq, density[i], succ_nodes[i]->node->word);
+		}
+#endif
 		for(i = 0; i < size; i++) {
 			if(word_prob <= density[i]) {
 				prev_node = node;
@@ -214,18 +220,17 @@ static NODE *pick_next_word(NODE *node) {
 			printf("END OF ARRAY premature END\n");
 			exit(1);
 		}
-		//printf("new PREV_NODE: %s\n", prev_node->word);
-		//printf("next word: %s\n", node->word);
-		//printf("total sum dist: %lf\n", sum_dist);
+#if DEBUG
+		printf("new PREV_NODE: %s\n", prev_node->word);
+		printf("next word: %s\n", node->word);
+		printf("total sum dist: %lf\n", sum_dist);
+#endif
 		printf(" %s", node->word);
 		was_first_word = 0;
 	}
 	else if(size_prec) {
-		//printf("node: %s\n", node->word);
-		//printf("prev node: %s\n", prev_node->word);
 		prec = find_prec(prev_node, node);
 		assert(prec);
-		//printf("prev word: %s\n", prec->node->word);
 
 		unsigned size = prec->num_succ,
 			total = prec->sum_succ;
@@ -247,9 +252,11 @@ static NODE *pick_next_word(NODE *node) {
 			density[i] = succ_nodes[i]->freq;
 		}
 		build_density(density, size, total);
-		//for(i = 0; i < size; i++) {
-		//	printf("freq: %*u, distr: %.4lf, word: %s\n", 3, succ_nodes[i]->freq, density[i], succ_nodes[i]->node->word);
-		//}
+#if DEBUG
+		for(i = 0; i < size; i++) {
+			printf("freq: %*u, distr: %.4lf, word: %s\n", 3, succ_nodes[i]->freq, density[i], succ_nodes[i]->node->word);
+		}
+#endif
 		for(i = 0; i < size; i++) {
 			if(word_prob <= density[i]) {
 				prev_node = node;
@@ -262,8 +269,10 @@ static NODE *pick_next_word(NODE *node) {
 			exit(1);
 		}
 
-		//printf("next word: %s\n", node->word);
-		//printf("total sum dist: %lf\n", sum_dist);
+#if DEBUG
+		printf("next word: %s\n", node->word);
+		printf("total sum dist: %lf\n", sum_dist);
+#endif
 		printf(" %s", node->word);
 	}
 	else {
