@@ -37,6 +37,7 @@ typedef struct node {
 	char	*word;		// hashed word
 	PREC	*prec;		// list of preceeding words (nodes)
 	SUCC	*succ;		// ONLY FOR BEGINNING OF SENTENCES, need to know which words follow
+	PUNC	*punc;		// vector of freq of punctuation marks
 } NODE;
 	
 typedef struct {

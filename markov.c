@@ -217,7 +217,10 @@ static NODE *pick_next_word(NODE *node) {
 			}
 		}
 		if(i == size) {
+#if DEBUG
 			printf("END OF ARRAY premature END\n");
+#endif
+			printf(".\n");
 			exit(1);
 		}
 #if DEBUG
@@ -239,9 +242,6 @@ static NODE *pick_next_word(NODE *node) {
 		i = 0;
 	
 		succ = prec->succ;
-		if(!succ) {
-			printf(". END OF SUCC\n");
-		}
 		while(succ) {
 			succ_nodes[i++] = succ;
 			sum_dist += (double)succ->freq/prec->sum_succ;
@@ -265,7 +265,10 @@ static NODE *pick_next_word(NODE *node) {
 			}
 		}
 		if(i == size) {
+#if DEBUG
 			printf("END OF ARRAY premature END\n");
+#endif
+			printf(".\n");
 			exit(1);
 		}
 
@@ -276,7 +279,9 @@ static NODE *pick_next_word(NODE *node) {
 		printf(" %s", node->word);
 	}
 	else {
+#if DEBUG
 		printf(". NO PREC\n");
+#endif
 		exit(1);
 	}
 	return node;

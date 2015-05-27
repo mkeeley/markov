@@ -299,6 +299,7 @@ static NODE *create_node(unsigned key, char *word, unsigned is_first, unsigned i
 	node->next = NULL;
 	node->prec= NULL;
 	node->succ = NULL;
+	node->punc = malloc(sizeof(PUNC));
 	return node;
 }
 
@@ -373,10 +374,14 @@ void insert_words(HASH_TABLE *ht, FILE *fp) {
 	static NODE *node = NULL;
 	char 	buf[64];
 	unsigned is_last = 0;
+	PUNC punc;
 	
 	while(fscanf(fp, "%s", buf) != EOF) {
-		is_last = (unsigned) parse(buf);
+		memset(&punc, 0, sizeof(punc));
+		punc = parse(buf);
+		is_last = punc.period | punc.question | punc.bang;
 		node = insert_node(ht, gen_hash(buf), buf, node, is_last);
+		update_punc(node->punc, &punc);
 		// if last word in sentence, reset node pointer and is_last flag
 		// node == NULL flags insert_node that next word is first in sentence
 		if(is_last) {
