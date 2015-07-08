@@ -11,11 +11,15 @@ static unsigned is_ellipsis(char *front, char *end, unsigned from_start) {
 	unsigned periods = 0;
 
 	if(from_start) 
-		while(front != end && *front++ == '.') 
+		while(front != end && *front == '.') {
 			periods++;
+			front++;
+		}
 	else 
-		while(front != end && *end-- == '.') 
+		while(front != end && *end-- == '.') {
 			periods++;
+			end--;
+		}
 	return periods;
 }
 
@@ -31,8 +35,7 @@ PUNC parse(char *word) {
 		*front,
 		*end;
 	unsigned len;
-	PUNC	punc;
-	memset(&punc, 0, sizeof(punc));
+	PUNC	punc = {0};
 
 	assert((len = strlen(word)));
 	

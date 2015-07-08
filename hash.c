@@ -97,6 +97,7 @@ void rem_node(NODE *node) {
 	}
 	printf("key '%u', freeing '%s'\n", node->key, node->word);
 	free(node->word);
+	free(node->punc);
 	free(node);
 	node = NULL;
 }
@@ -374,10 +375,9 @@ void insert_words(HASH_TABLE *ht, FILE *fp) {
 	static NODE *node = NULL;
 	char 	buf[64];
 	unsigned is_last = 0;
-	PUNC punc;
 	
 	while(fscanf(fp, "%s", buf) != EOF) {
-		memset(&punc, 0, sizeof(punc));
+		PUNC	punc = {0};
 		punc = parse(buf);
 		is_last = punc.period | punc.question | punc.bang;
 		node = insert_node(ht, gen_hash(buf), buf, node, is_last);
