@@ -379,6 +379,8 @@ void insert_words(HASH_TABLE *ht, FILE *fp) {
 	while(fscanf(fp, "%s", buf) != EOF) {
 		PUNC	punc = {0};
 		punc = parse(buf);
+        // either check if we are a "word" inside parse or another method. If we are not a word, then we can
+        // discard the word (reset the previous node and "is_last" parameters) and move onto the next one
 		is_last = punc.period | punc.question | punc.bang;
 		node = insert_node(ht, gen_hash(buf), buf, node, is_last);
 		update_punc(node->punc, &punc);
